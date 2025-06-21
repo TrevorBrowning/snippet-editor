@@ -4,36 +4,53 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="styles.css" />
-    <title>Document</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <title>Snippet Editor</title>
   </head>
   <body>
-    <header>
-      <h1>Snippet Editor</h1>
-      <p>Ctrl+v to paste image</p>
-    </header>
     <main>
-      <div class="center-wrapper">
-        <div class="buttons-container">
-          <button id="pasteBtn">Paste</button>
-          <button id="clearBtn">Clear</button>
-        </div>
-      </div>
-      <div class="toolbar-wrapper">
-        <div class="toolbar-container">
-          <button class="toolButton" id="lineBtn">Line</button>
+      <header>
+        <h1>Snippet Editor</h1>
+        <p>Paste an image (Ctrl+V) to begin</p>
+      </header>
+
+      <div class="toolbar">
+        <div class="tool-group">
+          <button class="toolButton active" id="lineBtn">Line</button>
           <button class="toolButton" id="rectangleBtn">Rectangle</button>
           <button class="toolButton" id="arrowBtn">Arrow</button>
+        </div>
+
+        <div class="tool-group">
           <button id="undoBtn">Undo</button>
+          <button id="clearBtn">Clear</button>
+        </div>
+
+        <div class="tool-settings">
+          <div class="setting">
+            <label for="colorPicker">Color</label>
+            <input type="color" id="colorPicker" value="#E01A4F" />
+          </div>
+          <div class="setting">
+            <label for="lineThick">Thickness</label>
+            <input type="range" id="lineThick" min="1" max="50" value="5" />
+          </div>
+        </div>
+
+        <div class="tool-group export-group">
           <button id="copyBtn">Copy</button>
           <button id="downloadBtn">Download</button>
-          <input type="color" id="colorPicker" />
-          <input type="range" id="lineThick" min="1" max="50" value="5" />
         </div>
       </div>
+
       <div id="canvas-container">
         <canvas id="image-paste"> </canvas>
       </div>
-      <div id="export-container"></div>
     </main>
     <script src="main.js"></script>
   </body>

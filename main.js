@@ -5,9 +5,15 @@ let startX = 0;
 let startY = 0;
 let canvasSnapshot = null;
 let history = [];
+let activeTool = "none";
 
 const colorPicker = document.getElementById("colorPicker");
 const lineThick = document.getElementById("lineThick");
+const downloadBtn = document.getElementById("downloadBtn");
+const undoBtn = document.getElementById("undoBtn");
+const copyBtn = document.getElementById("copyBtn");
+const clearBtn = document.getElementById("clearBtn");
+const toolButtons = document.querySelectorAll(".toolButton");
 
 function startDrawing(event) {
   if (activeTool === "none") return;
@@ -15,53 +21,37 @@ function startDrawing(event) {
   isDrawing = true;
   startX = event.offsetX;
   startY = event.offsetY;
-
   canvasSnapshot = context.getImageData(0, 0, canvas.width, canvas.height);
 }
+
 function stopDrawing() {
+  if (!isDrawing) return;
   isDrawing = false;
-  canvasSnapshot = null;
+
   history.push(context.getImageData(0, 0, canvas.width, canvas.height));
 }
+
 function draw(event) {
   if (!isDrawing) return;
 
-  const undoBtn = document.getElementById("undoBtn");
-
-  undoBtn.addEventListener("click", () => {
-    if (history.length > 1) {
-      history.pop();
-
-      const lastState = history[history.length - 1];
-
-      context.putImageData(lastState, 0, 0);
-    } else {
-      console.log("No more states to undo.");
-    }
-  });
-
   context.putImageData(canvasSnapshot, 0, 0);
+
+  context.strokeStyle = colorPicker.value;
+  context.lineWidth = lineThick.value;
+  context.lineCap = "round";
 
   if (activeTool === "rectangle") {
     const width = event.offsetX - startX;
     const height = event.offsetY - startY;
-    context.strokeStyle = colorPicker.value;
-    context.lineWidth = lineThick.value;
     context.beginPath();
     context.rect(startX, startY, width, height);
     context.stroke();
   } else if (activeTool === "line") {
-    context.strokeStyle = colorPicker.value;
-    context.lineWidth = lineThick.value;
-    context.lineCap = "round";
     context.beginPath();
     context.moveTo(startX, startY);
     context.lineTo(event.offsetX, event.offsetY);
     context.stroke();
   } else if (activeTool === "arrow") {
-    context.strokeStyle = colorPicker.value;
-    context.lineWidth = lineThick.value;
-    context.lineCap = "round";
     context.beginPath();
     context.moveTo(startX, startY);
     context.lineTo(event.offsetX, event.offsetY);
@@ -74,18 +64,14 @@ function drawArrowhead(context, fromX, fromY, toX, toY) {
   const headLength = 10;
   const dx = toX - fromX;
   const dy = toY - fromY;
-
   const angle = Math.atan2(dy, dx);
 
   context.moveTo(toX, toY);
-
   context.lineTo(
     toX - headLength * Math.cos(angle - Math.PI / 6),
     toY - headLength * Math.sin(angle - Math.PI / 6)
   );
-
   context.moveTo(toX, toY);
-
   context.lineTo(
     toX - headLength * Math.cos(angle + Math.PI / 6),
     toY - headLength * Math.sin(angle + Math.PI / 6)
@@ -97,34 +83,72 @@ canvas.addEventListener("mouseup", stopDrawing);
 canvas.addEventListener("mousemove", draw);
 canvas.addEventListener("mouseout", stopDrawing);
 
-let activeTool = "none";
-
-const toolButtons = document.querySelectorAll(".toolButton");
-
 toolButtons.forEach((button) => {
   button.addEventListener("click", () => {
     const toolName = button.id.replace("Btn", "");
-
     activeTool = toolName;
-
     console.log("Active tool changed to:", activeTool);
-
     toolButtons.forEach((btn) => btn.classList.remove("active"));
-
     button.classList.add("active");
   });
 });
+
+undoBtn.addEventListener("click", () => {
+  if (history.length > 1) {
+    history.pop();
+    const lastState = history[history.length - 1];
+    context.putImageData(lastState, 0, 0);
+  } else {
+    console.log("No more states to undo.");
+  }
+});
+
+downloadBtn.addEventListener("click", () => {
+  const imageURL = canvas.toDataURL("image/png");
+  const link = document.createElement("a");
+  link.href = imageURL;
+  const filename = `snippet-${Date.now()}.png`;
+  link.download = filename;
+  link.click();
+});
+
+copyBtn.addEventListener("click", () => {
+  canvas.toBlob((blob) => {
+    const item = new ClipboardItem({ "image/png": blob });
+    navigator.clipboard
+      .write([item])
+      .then(() => {
+        console.log("Image copied to clipboard successfully!");
+      })
+      .catch((err) => {
+        console.error("Failed to copy image: ", err);
+        alert("Sorry, failed to copy the image.");
+      });
+  }, "image/png");
+});
+
+clearBtn.addEventListener("click", () => {
+  if (
+    confirm(
+      "Are you sure you want to clear the canvas? All your work will be lost."
+    )
+  ) {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    history = [];
+    console.log("Canvas cleared and history reset.");
+  } else {
+    console.log("Clear action was cancelled.");
+  }
+});
+
 addEventListener("paste", (event) => {
   event.preventDefault();
-
   const items = event.clipboardData.items;
-
   let imageFile = null;
 
   for (const item of items) {
     if (item.kind === "file" && item.type.startsWith("image/")) {
       imageFile = item.getAsFile();
-
       break;
     }
   }
@@ -133,15 +157,33 @@ addEventListener("paste", (event) => {
     console.log("Successfully captured image file:", imageFile);
     const storedURL = URL.createObjectURL(imageFile);
     const image = new Image();
+
     image.onload = () => {
-      console.log("Image has loaded and is ready to be drawn!");
-      canvas = document.getElementById("image-paste");
-      context = canvas.getContext("2d");
-      canvas.width = image.width;
-      canvas.height = image.height;
-      context.drawImage(image, 0, 0);
+      console.log("Image has loaded. Calculating optimal canvas size.");
+
+      const padding = 60;
+      const headerHeight = document.querySelector("header").offsetHeight;
+      const toolbarHeight = document.querySelector(".toolbar").offsetHeight;
+      const maxCanvasWidth = window.innerWidth - padding;
+      const maxCanvasHeight =
+        window.innerHeight - headerHeight - toolbarHeight - padding;
+
+      const imgWidth = image.width;
+      const imgHeight = image.height;
+
+      const widthRatio = maxCanvasWidth / imgWidth;
+      const heightRatio = maxCanvasHeight / imgHeight;
+      const scaleRatio = Math.min(widthRatio, heightRatio, 1);
+
+      canvas.width = imgWidth * scaleRatio;
+      canvas.height = imgHeight * scaleRatio;
+
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+      history = [];
       history.push(context.getImageData(0, 0, canvas.width, canvas.height));
     };
+
     image.src = storedURL;
   }
 });
