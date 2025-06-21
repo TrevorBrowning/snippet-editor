@@ -6,6 +6,7 @@ let startY = 0;
 let canvasSnapshot = null;
 
 const colorPicker = document.getElementById("colorPicker");
+const lineThick = document.getElementById("lineThick");
 
 function startDrawing(event) {
   if (activeTool === "none") return;
@@ -29,20 +30,22 @@ function draw(event) {
     const width = event.offsetX - startX;
     const height = event.offsetY - startY;
     context.strokeStyle = colorPicker.value;
-    context.lineWidth = 2;
+    context.lineWidth = lineThick.value;
     context.beginPath();
     context.rect(startX, startY, width, height);
     context.stroke();
   } else if (activeTool === "line") {
     context.strokeStyle = colorPicker.value;
-    context.lineWidth = 2;
+    context.lineWidth = lineThick.value;
+    context.lineCap = "round";
     context.beginPath();
     context.moveTo(startX, startY);
     context.lineTo(event.offsetX, event.offsetY);
     context.stroke();
   } else if (activeTool === "arrow") {
     context.strokeStyle = colorPicker.value;
-    context.lineWidth = 2;
+    context.lineWidth = lineThick.value;
+    context.lineCap = "round";
     context.beginPath();
     context.moveTo(startX, startY);
     context.lineTo(event.offsetX, event.offsetY);
