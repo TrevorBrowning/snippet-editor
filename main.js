@@ -4,6 +4,7 @@ let isDrawing = false;
 let startX = 0;
 let startY = 0;
 let canvasSnapshot = null;
+let history = [];
 
 const colorPicker = document.getElementById("colorPicker");
 const lineThick = document.getElementById("lineThick");
@@ -20,9 +21,24 @@ function startDrawing(event) {
 function stopDrawing() {
   isDrawing = false;
   canvasSnapshot = null;
+  history.push(context.getImageData(0, 0, canvas.width, canvas.height));
 }
 function draw(event) {
   if (!isDrawing) return;
+
+  const undoBtn = document.getElementById("undoBtn");
+
+  undoBtn.addEventListener("click", () => {
+    if (history.length > 1) {
+      history.pop();
+
+      const lastState = history[history.length - 1];
+
+      context.putImageData(lastState, 0, 0);
+    } else {
+      console.log("No more states to undo.");
+    }
+  });
 
   context.putImageData(canvasSnapshot, 0, 0);
 
@@ -124,6 +140,7 @@ addEventListener("paste", (event) => {
       canvas.width = image.width;
       canvas.height = image.height;
       context.drawImage(image, 0, 0);
+      history.push(context.getImageData(0, 0, canvas.width, canvas.height));
     };
     image.src = storedURL;
   }
