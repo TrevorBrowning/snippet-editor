@@ -13,15 +13,54 @@ const downloadBtn = document.getElementById("downloadBtn");
 const undoBtn = document.getElementById("undoBtn");
 const copyBtn = document.getElementById("copyBtn");
 const clearBtn = document.getElementById("clearBtn");
+const pasteBtn = document.getElementById("pasteBtn");
 const toolButtons = document.querySelectorAll(".toolButton");
 
-function startDrawing(event) {
-  if (activeTool === "none") {
-    canvas.style.cursor = "crosshair";
-  } else {
-    canvas.style.cursor = "default";
-  }
+/**
+ * Handles the core logic of processing a pasted image blob/file
+ * and drawing it onto the canvas, scaled to fit the screen.
+ * @param {Blob | File} imageBlob The image data to process.
+ */
+function handlePastedImage(imageBlob) {
+  if (!imageBlob) return;
 
+  console.log("Processing pasted image...", imageBlob);
+  const imageUrl = URL.createObjectURL(imageBlob);
+  const image = new Image();
+
+  image.onload = () => {
+    console.log("Image has loaded. Calculating optimal canvas size.");
+
+    const padding = 60;
+    const headerHeight = document.querySelector("header").offsetHeight;
+    const toolbarHeight = document.querySelector(".toolbar").offsetHeight;
+    const maxCanvasWidth = window.innerWidth - padding;
+    const maxCanvasHeight =
+      window.innerHeight - headerHeight - toolbarHeight - padding;
+
+    const imgWidth = image.width;
+    const imgHeight = image.height;
+
+    const scaleRatio = Math.min(
+      maxCanvasWidth / imgWidth,
+      maxCanvasHeight / imgHeight,
+      1
+    );
+
+    canvas.width = imgWidth * scaleRatio;
+    canvas.height = imgHeight * scaleRatio;
+
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    history = [];
+    history.push(context.getImageData(0, 0, canvas.width, canvas.height));
+  };
+
+  image.src = imageUrl;
+}
+
+function startDrawing(event) {
+  if (activeTool === "none") return;
   isDrawing = true;
   startX = event.offsetX;
   startY = event.offsetY;
@@ -31,7 +70,6 @@ function startDrawing(event) {
 function stopDrawing() {
   if (!isDrawing) return;
   isDrawing = false;
-
   history.push(context.getImageData(0, 0, canvas.width, canvas.height));
 }
 
@@ -44,24 +82,22 @@ function draw(event) {
   context.lineWidth = lineThick.value;
   context.lineCap = "round";
 
+  context.beginPath();
+
   if (activeTool === "rectangle") {
     const width = event.offsetX - startX;
     const height = event.offsetY - startY;
-    context.beginPath();
     context.rect(startX, startY, width, height);
-    context.stroke();
   } else if (activeTool === "line") {
-    context.beginPath();
     context.moveTo(startX, startY);
     context.lineTo(event.offsetX, event.offsetY);
-    context.stroke();
   } else if (activeTool === "arrow") {
-    context.beginPath();
     context.moveTo(startX, startY);
     context.lineTo(event.offsetX, event.offsetY);
     drawArrowhead(context, startX, startY, event.offsetX, event.offsetY);
-    context.stroke();
   }
+
+  context.stroke();
 }
 
 function drawArrowhead(context, fromX, fromY, toX, toY) {
@@ -89,11 +125,14 @@ canvas.addEventListener("mouseout", stopDrawing);
 
 toolButtons.forEach((button) => {
   button.addEventListener("click", () => {
-    const toolName = button.id.replace("Btn", "");
-    activeTool = toolName;
-    console.log("Active tool changed to:", activeTool);
-    toolButtons.forEach((btn) => btn.classList.remove("active"));
-    button.classList.add("active");
+    if (button.classList.contains("toolButton")) {
+      const toolName = button.id.replace("Btn", "");
+      activeTool = toolName;
+      console.log("Active tool changed to:", activeTool);
+
+      toolButtons.forEach((btn) => btn.classList.remove("active"));
+      button.classList.add("active");
+    }
   });
 });
 
@@ -123,6 +162,11 @@ copyBtn.addEventListener("click", () => {
       .write([item])
       .then(() => {
         console.log("Image copied to clipboard successfully!");
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = "Copied!";
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+        }, 2000);
       })
       .catch((err) => {
         console.error("Failed to copy image: ", err);
@@ -132,11 +176,7 @@ copyBtn.addEventListener("click", () => {
 });
 
 clearBtn.addEventListener("click", () => {
-  if (
-    confirm(
-      "Are you sure you want to clear the canvas? All your work will be lost."
-    )
-  ) {
+  if (confirm("Are you sure you want to clear the canvas?")) {
     context.clearRect(0, 0, canvas.width, canvas.height);
     history = [];
     console.log("Canvas cleared and history reset.");
@@ -145,49 +185,34 @@ clearBtn.addEventListener("click", () => {
   }
 });
 
+pasteBtn.addEventListener("click", async () => {
+  try {
+    const clipboardItems = await navigator.clipboard.read();
+    for (const item of clipboardItems) {
+      const imageType = item.types.find((type) => type.startsWith("image/"));
+      if (imageType) {
+        const blob = await item.getType(imageType);
+        handlePastedImage(blob);
+        return;
+      }
+    }
+    alert("No image found on the clipboard.");
+  } catch (err) {
+    console.error("Failed to read from clipboard: ", err);
+    alert(
+      "Failed to paste. Please ensure you have granted clipboard permissions."
+    );
+  }
+});
+
 addEventListener("paste", (event) => {
   event.preventDefault();
   const items = event.clipboardData.items;
-  let imageFile = null;
-
   for (const item of items) {
     if (item.kind === "file" && item.type.startsWith("image/")) {
-      imageFile = item.getAsFile();
+      const imageFile = item.getAsFile();
+      handlePastedImage(imageFile);
       break;
     }
-  }
-
-  if (imageFile) {
-    console.log("Successfully captured image file:", imageFile);
-    const storedURL = URL.createObjectURL(imageFile);
-    const image = new Image();
-
-    image.onload = () => {
-      console.log("Image has loaded. Calculating optimal canvas size.");
-
-      const padding = 60;
-      const headerHeight = document.querySelector("header").offsetHeight;
-      const toolbarHeight = document.querySelector(".toolbar").offsetHeight;
-      const maxCanvasWidth = window.innerWidth - padding;
-      const maxCanvasHeight =
-        window.innerHeight - headerHeight - toolbarHeight - padding;
-
-      const imgWidth = image.width;
-      const imgHeight = image.height;
-
-      const widthRatio = maxCanvasWidth / imgWidth;
-      const heightRatio = maxCanvasHeight / imgHeight;
-      const scaleRatio = Math.min(widthRatio, heightRatio, 1);
-
-      canvas.width = imgWidth * scaleRatio;
-      canvas.height = imgHeight * scaleRatio;
-
-      context.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-      history = [];
-      history.push(context.getImageData(0, 0, canvas.width, canvas.height));
-    };
-
-    image.src = storedURL;
   }
 });
