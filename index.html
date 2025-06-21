@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Document</title>
+  </head>
+  <body>
+    <header>
+      <h1>Snippet Editor</h1>
+      <p>Ctrl+v to paste image</p>
+    </header>
+    <main>
+      <div class="buttons-container">
+        <button id="pasteBtn">Paste</button>
+        <button id="copyBtn">Copy</button>
+        <button id="clearBtn">Clear</button>
+      </div>
+      <div id="canvas-container">
+        <canvas id="image-paste"> </canvas>
+      </div>
+      <div id="export-container"></div>
+    </main>
+    <script src="main.js"></script>
+  </body>
+</html>
