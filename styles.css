@@ -56,6 +56,12 @@ button:active {
   background-color: #adb5bd;
 }
 
+.toolButton.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
 #canvas-container {
   width: 100%;
   max-width: 800px;
