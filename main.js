@@ -16,7 +16,11 @@ const clearBtn = document.getElementById("clearBtn");
 const toolButtons = document.querySelectorAll(".toolButton");
 
 function startDrawing(event) {
-  if (activeTool === "none") return;
+  if (activeTool === "none") {
+    canvas.style.cursor = "crosshair";
+  } else {
+    canvas.style.cursor = "default";
+  }
 
   isDrawing = true;
   startX = event.offsetX;

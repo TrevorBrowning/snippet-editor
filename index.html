@@ -21,30 +21,50 @@
 
       <div class="toolbar">
         <div class="tool-group">
-          <button class="toolButton active" id="lineBtn">Line</button>
-          <button class="toolButton" id="rectangleBtn">Rectangle</button>
-          <button class="toolButton" id="arrowBtn">Arrow</button>
+          <button class="toolButton active" id="lineBtn" title="Draw a line">
+            Line
+          </button>
+          <button class="toolButton" id="rectangleBtn" title="Draw a rect">
+            Rectangle
+          </button>
+          <button class="toolButton" id="arrowBtn" title="Draw an arrow">
+            Arrow
+          </button>
         </div>
 
         <div class="tool-group">
-          <button id="undoBtn">Undo</button>
-          <button id="clearBtn">Clear</button>
+          <button id="undoBtn" title="Undo last change">Undo</button>
+          <button id="clearBtn" title="Clear canvas">Clear</button>
         </div>
 
         <div class="tool-settings">
           <div class="setting">
             <label for="colorPicker">Color</label>
-            <input type="color" id="colorPicker" value="#E01A4F" />
+            <input
+              type="color"
+              id="colorPicker"
+              value="#E01A4F"
+              title="Select a draw color"
+            />
           </div>
           <div class="setting">
             <label for="lineThick">Thickness</label>
-            <input type="range" id="lineThick" min="1" max="50" value="5" />
+            <input
+              type="range"
+              id="lineThick"
+              min="1"
+              max="50"
+              value="5"
+              title="Select a draw width"
+            />
           </div>
         </div>
 
         <div class="tool-group export-group">
-          <button id="copyBtn">Copy</button>
-          <button id="downloadBtn">Download</button>
+          <button id="copyBtn" title="Copy canvas to clipboard">Copy</button>
+          <button id="downloadBtn" title="Download canvas to storage">
+            Download
+          </button>
         </div>
       </div>
 
