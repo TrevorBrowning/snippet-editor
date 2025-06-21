@@ -1,9 +1,11 @@
-const canvas = document.getElementById("image-paste");
-const context = canvas.getContext("2d");
+let canvas = document.getElementById("image-paste");
+let context = canvas.getContext("2d");
 let isDrawing = false;
 let startX = 0;
 let startY = 0;
 let canvasSnapshot = null;
+
+const colorPicker = document.getElementById("colorPicker");
 
 function startDrawing(event) {
   if (activeTool === "none") return;
@@ -26,20 +28,20 @@ function draw(event) {
   if (activeTool === "rectangle") {
     const width = event.offsetX - startX;
     const height = event.offsetY - startY;
-    context.strokeStyle = "red";
+    context.strokeStyle = colorPicker.value;
     context.lineWidth = 2;
     context.beginPath();
     context.rect(startX, startY, width, height);
     context.stroke();
   } else if (activeTool === "line") {
-    context.strokeStyle = "blue";
+    context.strokeStyle = colorPicker.value;
     context.lineWidth = 2;
     context.beginPath();
     context.moveTo(startX, startY);
     context.lineTo(event.offsetX, event.offsetY);
     context.stroke();
   } else if (activeTool === "arrow") {
-    context.strokeStyle = "green";
+    context.strokeStyle = colorPicker.value;
     context.lineWidth = 2;
     context.beginPath();
     context.moveTo(startX, startY);
